@@ -28,4 +28,11 @@ public class ErrorHandler {
     public Map<String, String> handleValidation(MethodArgumentNotValidException e) {
         return Map.of("error", e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> handleForbidden(ForbiddenException e) {
+        return Map.of("error", e.getReason());
+    }
+
 }

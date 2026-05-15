@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * TODO Sprint add-bookings.
@@ -18,8 +18,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class Booking {
     private Long id;            //Уникальный идентификатор бронирования
-    private LocalDate start;    //дата и время начала бронирования
-    private LocalDate end;      //дата и время конца бронирования
+    private LocalDateTime start;    //дата и время начала бронирования
+    private LocalDateTime end;      //дата и время конца бронирования
     private Item item;          // вещь, которую пользователь бронирует
     private User booker;        //пользователь, который осуществляет бронирование
     private Status status;      //статус бронирования

@@ -111,12 +111,14 @@ class UserServiceTest {
 // ======================== findById ========================
 
     @Test
-    void findById_Exists_ShouldReturnUser() {
+    void findById_Exists_ShouldReturnUserDto() {
         User user = makeUser(1L, "Пользователь", "mail@mail.ru");
+        UserDto userDto = makeUserDto(1L, "Пользователь", "mail@mail.ru");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.mapToUserDto(user)).thenReturn(userDto);
 
-        Optional<User> result = userService.findById(1L);
+        Optional<UserDto> result = userService.findById(1L);
 
         assertTrue(result.isPresent());
         assertEquals(1L, result.get().getId());
@@ -126,7 +128,7 @@ class UserServiceTest {
     void findById_NotFound_ShouldReturnEmpty() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<User> result = userService.findById(99L);
+        Optional<UserDto> result = userService.findById(99L);
 
         assertTrue(result.isEmpty());
     }
@@ -134,15 +136,19 @@ class UserServiceTest {
 // ======================== findAll ========================
 
     @Test
-    void findAll_ShouldReturnAllUsers() {
+    void findAll_ShouldReturnAllDtos() {
         List<User> users = List.of(
                 makeUser(1L, "Первый", "first@mail.ru"),
                 makeUser(2L, "Второй", "second@mail.ru")
         );
 
         when(userRepository.findAll()).thenReturn(users);
+        when(userMapper.mapToUserDto(users.get(0)))
+                .thenReturn(makeUserDto(1L, "Первый", "first@mail.ru"));
+        when(userMapper.mapToUserDto(users.get(1)))
+                .thenReturn(makeUserDto(2L, "Второй", "second@mail.ru"));
 
-        List<User> result = userService.findAll();
+        List<UserDto> result = userService.findAll();
 
         assertEquals(2, result.size());
     }

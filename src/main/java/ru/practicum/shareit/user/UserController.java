@@ -8,8 +8,6 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.NewUserRequest;
 import ru.practicum.shareit.user.dto.UpdateUserRequest;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapper;
-import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
@@ -22,37 +20,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final UserMapper userMapper;
 
     @PostMapping
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody NewUserRequest request) {
-        UserDto userDto = userService.createUser(request);
-        return ResponseEntity.status(201).body(userDto);
+        return ResponseEntity.status(201).body(userService.createUser(request));
     }
 
     @PatchMapping("/{userId}")
     public ResponseEntity<UserDto> updateUser(
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserRequest request) {
-        UserDto updatedUser = userService.updateUser(userId, request);
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(userService.updateUser(userId, request));
     }
 
     @GetMapping
     public ResponseEntity<List<UserDto>> getAllUsers() {
-        List<User> users = userService.findAll();
-        List<UserDto> userDtos = users.stream()
-                .map(userMapper::mapToUserDto)
-                .toList();
-        return ResponseEntity.ok(userDtos);
+        return ResponseEntity.ok(userService.findAll());
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long userId) {
-        UserDto userDto = userService.findById(userId)
-                .map(userMapper::mapToUserDto)
+        return userService.findById(userId)
+                .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        return ResponseEntity.ok(userDto);
     }
 
     @DeleteMapping("/{userId}")

@@ -15,7 +15,6 @@ import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.dto.NewUserRequest;
 import ru.practicum.shareit.user.dto.UpdateUserRequest;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,9 +37,6 @@ public class UserControllerTest {
 
     @MockBean
     private UserService userService;
-
-    @MockBean
-    private UserMapper userMapper;
 
     // ======================== POST /users ========================
 
@@ -105,11 +101,9 @@ public class UserControllerTest {
 
     @Test
     void getAllUsers_ShouldReturn200() throws Exception {
-        User user = makeUser(1L, "Пользователь", "mail@mail.ru");
         UserDto userDto = makeDto(1L, "Пользователь", "mail@mail.ru");
 
-        when(userService.findAll()).thenReturn(List.of(user));
-        when(userMapper.mapToUserDto(user)).thenReturn(userDto);
+        when(userService.findAll()).thenReturn(List.of(userDto));
 
         mockMvc.perform(get("/users"))
                 .andDo(print())
@@ -123,11 +117,9 @@ public class UserControllerTest {
 
     @Test
     void getUserById_Exists_ShouldReturn200() throws Exception {
-        User user = makeUser(1L, "Пользователь", "mail@mail.ru");
         UserDto userDto = makeDto(1L, "Пользователь", "mail@mail.ru");
 
-        when(userService.findById(1L)).thenReturn(Optional.of(user));
-        when(userMapper.mapToUserDto(user)).thenReturn(userDto);
+        when(userService.findById(1L)).thenReturn(Optional.of(userDto));
 
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().isOk())

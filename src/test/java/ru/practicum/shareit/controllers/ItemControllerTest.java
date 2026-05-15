@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.ItemController;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -127,13 +128,13 @@ class ItemControllerTest {
         UpdateItemRequest request = makeUpdateItemRequest("Новая дрель", null, null);
 
         when(itemService.updateItem(eq(2L), eq(1L), any(UpdateItemRequest.class)))
-                .thenThrow(new NotFoundException("Вещь не найдена у данного пользователя"));
+                .thenThrow(new ForbiddenException("Нет доступа к чужой вещи"));
 
         mockMvc.perform(patch("/items/1")
                         .header("X-Sharer-User-Id", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
 // ======================== GET /items/{itemId} ========================
