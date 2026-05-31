@@ -7,12 +7,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.ItemController;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.NewItemRequest;
-import ru.practicum.shareit.item.dto.UpdateItemRequest;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.service.ItemService;
 
@@ -141,9 +140,9 @@ class ItemControllerTest {
 
     @Test
     void getItemById_Exists_ShouldReturn200() throws Exception {
-        ItemDto itemDto = makeItemDto(1L, "Дрель", "Мощная дрель", true);
+        ItemOwnerDto itemOwnerDto = makeItemOwnerDto(1L, "Дрель", "Мощная дрель", true);
 
-        when(itemService.getItemById(1L)).thenReturn(itemDto);
+        when(itemService.getItemById(1L)).thenReturn(itemOwnerDto);
 
         mockMvc.perform(get("/items/1")
                         .header("X-Sharer-User-Id", 1L))
@@ -166,9 +165,9 @@ class ItemControllerTest {
 
     @Test
     void getItemsByOwner_ShouldReturn200() throws Exception {
-        ItemDto itemDto = makeItemDto(1L, "Дрель", "Мощная дрель", true);
+        ItemOwnerDto itemOwnerDto = makeItemOwnerDto(1L, "Дрель", "Мощная дрель", true);
 
-        when(itemService.getItemsByOwner(1L)).thenReturn(List.of(itemDto));
+        when(itemService.getItemsByOwner(1L)).thenReturn(List.of(itemOwnerDto));
 
         mockMvc.perform(get("/items")
                         .header("X-Sharer-User-Id", 1L))
@@ -201,6 +200,58 @@ class ItemControllerTest {
                 .andExpect(jsonPath("$").isEmpty());
     }
 
+    // ======================== POST /items/{itemId}/comment ========================
+
+    @Test
+    void addComment_ValidData_ShouldReturn201() throws Exception {
+        NewCommentRequest request = new NewCommentRequest();
+        request.setText("Отличная дрель!");
+
+        CommentDto commentDto = new CommentDto();
+        commentDto.setId(1L);
+        commentDto.setText("Отличная дрель!");
+        commentDto.setAuthorName("User");
+
+        when(itemService.addComment(eq(1L), eq(1L), any(NewCommentRequest.class)))
+                .thenReturn(commentDto);
+
+        mockMvc.perform(post("/items/1/comment")
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.text").value("Отличная дрель!"))
+                .andExpect(jsonPath("$.authorName").value("User"));
+    }
+
+    @Test
+    void addComment_NoCompletedBooking_ShouldReturn400() throws Exception {
+        NewCommentRequest request = new NewCommentRequest();
+        request.setText("Отличная дрель!");
+
+        when(itemService.addComment(eq(1L), eq(1L), any(NewCommentRequest.class)))
+                .thenThrow(new BadRequestException("Оставить отзыв можно только после завершения аренды"));
+
+        mockMvc.perform(post("/items/1/comment")
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addComment_EmptyText_ShouldReturn400() throws Exception {
+        NewCommentRequest request = new NewCommentRequest();
+        request.setText("");
+
+        mockMvc.perform(post("/items/1/comment")
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
 // ======================== helpers ========================
 
     private NewItemRequest makeNewItemRequest(String name, String description, Boolean available) {
@@ -221,6 +272,15 @@ class ItemControllerTest {
 
     private ItemDto makeItemDto(Long id, String name, String description, Boolean available) {
         ItemDto dto = new ItemDto();
+        dto.setId(id);
+        dto.setName(name);
+        dto.setDescription(description);
+        dto.setAvailable(available);
+        return dto;
+    }
+
+    private ItemOwnerDto makeItemOwnerDto(Long id, String name, String description, Boolean available) {
+        ItemOwnerDto dto = new ItemOwnerDto();
         dto.setId(id);
         dto.setName(name);
         dto.setDescription(description);
