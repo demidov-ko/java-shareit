@@ -22,6 +22,8 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -67,12 +69,22 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemOwnerDto getItemById(Long itemId) {
+    public ItemOwnerDto getItemById(Long userId, Long itemId) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
         LocalDateTime now = LocalDateTime.now();
         List<Comment> comments = commentRepository.findAllByItemId(itemId);
+
+        log.info("Комментарии для вещи {}: {}", itemId, comments.size());
+
+        boolean isOwner = item.getOwner().getId().equals(userId);
+        //владелец вещи видит даты бронирования
+        if (isOwner) {
+            List<Booking> bookings = bookingRepository.findByItemIdIn(
+                    List.of(itemId), SORT_BY_START_DESC);
+            return buildItemOwnerDto(item, bookings, comments, now);
+        }
 
         return buildItemOwnerDto(item, List.of(), comments, now);
     }
@@ -84,16 +96,26 @@ public class ItemServiceImpl implements ItemService {
                 .map(Item::getId)
                 .toList();
 
-        //получаем все бронирования для всех вещей владельца
-        List<Booking> bookings = bookingRepository.findByItemIdIn(
-                itemIds, SORT_BY_START_DESC);
+        //группируем бронирования по itemId
+        Map<Long, List<Booking>> bookingsByItemId = bookingRepository
+                .findByItemIdIn(itemIds, SORT_BY_START_DESC)
+                .stream()
+                .collect(Collectors.groupingBy(b -> b.getItem().getId()));
 
-        //получаем все комментарии для всех вещей владельца
-        List<Comment> comments = commentRepository.findAllByItemIdIn(itemIds);
+        //группируем комментарии по itemId
+        Map<Long, List<Comment>> commentsByItemId = commentRepository
+                .findAllByItemIdIn(itemIds)
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getItem().getId()));
+
         LocalDateTime now = LocalDateTime.now();
 
         return items.stream()
-                .map(item -> buildItemOwnerDto(item, bookings, comments, now))
+                .map(item -> buildItemOwnerDto(
+                        item,
+                        bookingsByItemId.getOrDefault(item.getId(), List.of()),
+                        commentsByItemId.getOrDefault(item.getId(), List.of()),
+                        now))
                 .toList();
     }
 
@@ -141,8 +163,8 @@ public class ItemServiceImpl implements ItemService {
 
     //собираем ItemOwnerDto для одной вещи
     private ItemOwnerDto buildItemOwnerDto(Item item,
-                                           List<Booking> allBookings,
-                                           List<Comment> allComments,
+                                           List<Booking> itemBookings,
+                                           List<Comment> itemComments,
                                            LocalDateTime now) {
 
         ItemOwnerDto dto = new ItemOwnerDto();
@@ -151,27 +173,25 @@ public class ItemServiceImpl implements ItemService {
         dto.setDescription(item.getDescription());
         dto.setAvailable(item.getAvailable());
 
-        //фильтруем бронирования только для этой вещи
-        List<Booking> itemBookings = allBookings.stream()
-                .filter(b -> b.getItem().getId().equals(item.getId()))
+        //фильтруем только APPROVED бронирования
+        List<Booking> aproved = itemBookings.stream()
                 .filter(b -> b.getStatus().equals(Status.APPROVED))
                 .toList();
 
         //последнее бронирование — максимальное end до now
-        itemBookings.stream()
+        aproved.stream()
                 .filter(b -> b.getEnd().isBefore(now))
                 .max(Comparator.comparing(Booking::getEnd))
                 .ifPresent(b -> dto.setLastBooking(b.getEnd()));
 
         //ближайшее следующее — минимальное start после now
-        itemBookings.stream()
+        aproved.stream()
                 .filter(b -> b.getStart().isAfter(now))
                 .min(Comparator.comparing(Booking::getStart))
                 .ifPresent(b -> dto.setNextBooking(b.getStart()));
 
         //комментарии для этой вещи
-        List<CommentDto> comments = allComments.stream()
-                .filter(c -> c.getItem().getId().equals(item.getId()))
+        List<CommentDto> comments = itemComments.stream()
                 .map(commentMapper::mapToCommentDto)
                 .toList();
         dto.setComments(comments);

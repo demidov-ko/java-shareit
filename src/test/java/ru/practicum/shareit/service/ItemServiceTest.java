@@ -138,7 +138,7 @@ class ItemServiceTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(commentRepository.findAllByItemId(1L)).thenReturn(List.of());
 
-        ItemOwnerDto result = itemService.getItemById(1L);
+        ItemOwnerDto result = itemService.getItemById(1L, 1L);
 
         assertEquals(1L, result.getId());
         assertNull(result.getLastBooking());
@@ -151,7 +151,7 @@ class ItemServiceTest {
         when(itemRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> itemService.getItemById(99L));
+                () -> itemService.getItemById(1L, 99L));
     }
 
 // ======================== getItemsByOwner ========================

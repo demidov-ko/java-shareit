@@ -142,7 +142,7 @@ class ItemControllerTest {
     void getItemById_Exists_ShouldReturn200() throws Exception {
         ItemOwnerDto itemOwnerDto = makeItemOwnerDto(1L, "Дрель", "Мощная дрель", true);
 
-        when(itemService.getItemById(1L)).thenReturn(itemOwnerDto);
+        when(itemService.getItemById(1L, 1L)).thenReturn(itemOwnerDto);
 
         mockMvc.perform(get("/items/1")
                         .header("X-Sharer-User-Id", 1L))
@@ -153,7 +153,7 @@ class ItemControllerTest {
 
     @Test
     void getItemById_NotFound_ShouldReturn404() throws Exception {
-        when(itemService.getItemById(99L))
+        when(itemService.getItemById(1L,99L))
                 .thenThrow(new NotFoundException("Вещь не найдена"));
 
         mockMvc.perform(get("/items/99")

@@ -52,6 +52,10 @@ public class BookingServiceImpl implements BookingService {
             throw new ForbiddenException("Владелец не может бронировать свою вещь");
         }
 
+        if (!request.getStart().isAfter(LocalDateTime.now())) {
+            throw new BadRequestException("Дата начала бронирования не должна быть в прошлом");
+        }
+
         if (!request.getEnd().isAfter(request.getStart())) {
             throw new BadRequestException("Дата окончания бронирования должна быть позже даты начала");
         }
@@ -107,8 +111,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getBookingsByBooker(Long userId, String state) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь не найден");
+        }
 
         BookingState bookingState = parseState(state);
         LocalDateTime now = LocalDateTime.now();
@@ -134,8 +139,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getBookingsByOwner(Long userId, String state) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь не найден");
+        }
 
         BookingState bookingState = parseState(state);
         LocalDateTime now = LocalDateTime.now();

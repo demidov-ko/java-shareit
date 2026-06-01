@@ -27,7 +27,7 @@ public class Item {
     @Column(nullable = false)
     private String description; //развёрнутое описание
 
-    @JoinColumn(name = "is_available", nullable = false)
+    @Column(nullable = false)
     private Boolean available;  //статус о том, доступна или нет вещь для аренды;
 
     @ManyToOne
