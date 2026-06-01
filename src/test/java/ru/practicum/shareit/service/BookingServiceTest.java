@@ -276,7 +276,7 @@ class BookingServiceTest {
                 booker, Status.WAITING);
         BookingDto bookingDto = makeBookingDto(1L, Status.WAITING);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(booker));
+        when(userRepository.existsById(1L)).thenReturn(true);
         when(bookingRepository.findByBookerId(eq(1L), any()))
                 .thenReturn(List.of(booking));
         when(bookingMapper.mapToBookingDto(booking)).thenReturn(bookingDto);
@@ -289,7 +289,7 @@ class BookingServiceTest {
     @Test
     void getBookingsByBooker_InvalidState_ShouldThrowBadRequestException() {
         User booker = makeUser(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(booker));
+        when(userRepository.existsById(1L)).thenReturn(true);
 
         assertThrows(BadRequestException.class,
                 () -> bookingService.getBookingsByBooker(1L, "INVALID"));
@@ -297,7 +297,7 @@ class BookingServiceTest {
 
     @Test
     void getBookingsByBooker_UserNotFound_ShouldThrowNotFoundException() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(userRepository.existsById(99L)).thenReturn(false);
 
         assertThrows(NotFoundException.class,
                 () -> bookingService.getBookingsByBooker(99L, "ALL"));
@@ -312,7 +312,7 @@ class BookingServiceTest {
                 makeUser(2L), Status.WAITING);
         BookingDto bookingDto = makeBookingDto(1L, Status.WAITING);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.existsById(1L)).thenReturn(true);
         when(bookingRepository.findByItemOwnerId(eq(1L), any()))
                 .thenReturn(List.of(booking));
         when(bookingMapper.mapToBookingDto(booking)).thenReturn(bookingDto);
@@ -325,7 +325,7 @@ class BookingServiceTest {
     @Test
     void getBookingsByOwner_InvalidState_ShouldThrowBadRequestException() {
         User owner = makeUser(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.existsById(1L)).thenReturn(true);
 
         assertThrows(BadRequestException.class,
                 () -> bookingService.getBookingsByOwner(1L, "INVALID"));
@@ -333,7 +333,7 @@ class BookingServiceTest {
 
     @Test
     void getBookingsByOwner_UserNotFound_ShouldThrowNotFoundException() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(userRepository.existsById(99L)).thenReturn(false);
 
         assertThrows(NotFoundException.class,
                 () -> bookingService.getBookingsByOwner(99L, "ALL"));
