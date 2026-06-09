@@ -1,9 +1,9 @@
 package ru.practicum.shareit.booking.dto;
 
 import lombok.Data;
-import ru.practicum.shareit.booking.Status;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.booking.model.Status;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.user.dto.UserDto;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +15,7 @@ public class BookingDto {
     private Long id;            //Уникальный идентификатор бронирования
     private LocalDateTime start;    //дата и время начала бронирования
     private LocalDateTime end;      //дата и время конца бронирования
-    private Item item;          // вещь, которую пользователь бронирует
-    private User booker;        //пользователь, который осуществляет бронирование
+    private ItemDto item;          // вещь, которую пользователь бронирует
+    private UserDto booker;        //пользователь, который осуществляет бронирование
     private Status status;      //статус бронирования
 }

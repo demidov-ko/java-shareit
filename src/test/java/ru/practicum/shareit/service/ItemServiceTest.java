@@ -5,17 +5,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.Status;
+import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.NewItemRequest;
-import ru.practicum.shareit.item.dto.UpdateItemRequest;
+import ru.practicum.shareit.item.dto.*;
+import ru.practicum.shareit.item.mapper.CommentMapper;
 import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.item.service.ItemServiceImpl;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +39,16 @@ class ItemServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private BookingRepository bookingRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
     private ItemMapper itemMapper;
+
+    @Mock
+    private CommentMapper commentMapper;
 
     @InjectMocks
     private ItemServiceImpl itemService;
@@ -83,7 +98,7 @@ class ItemServiceTest {
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(itemMapper.updateItemFields(item, request)).thenReturn(updated);
-        when(itemRepository.update(updated)).thenReturn(updated);
+        when(itemRepository.save(updated)).thenReturn(updated);
         when(itemMapper.mapToItemDto(updated)).thenReturn(itemDto);
 
         ItemDto result = itemService.updateItem(1L, 1L, request);
@@ -101,7 +116,7 @@ class ItemServiceTest {
 
         assertThrows(NotFoundException.class,
                 () -> itemService.updateItem(2L, 1L, request));
-        verify(itemRepository, never()).update(any());
+        verify(itemRepository, never()).save(any());
     }
 
     @Test
@@ -109,23 +124,26 @@ class ItemServiceTest {
         when(itemRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> itemService.updateItem(1L, 99L, makeUpdateItemRequest("name", null, null)));
+                () -> itemService.updateItem(1L, 99L,
+                        makeUpdateItemRequest("name", null, null)));
     }
 
 // ======================== getItemById ========================
 
     @Test
-    void getItemById_Exists_ShouldReturnItemDto() {
+    void getItemById_Exists_ShouldReturnOwnerDto() {
         User owner = makeUser(1L);
         Item item = makeItem(1L, "Дрель", "Описание", true, owner);
-        ItemDto itemDto = makeItemDto(1L, "Дрель", "Описание", true);
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
-        when(itemMapper.mapToItemDto(item)).thenReturn(itemDto);
+        when(commentRepository.findAllByItemId(1L)).thenReturn(List.of());
 
-        ItemDto result = itemService.getItemById(1L);
+        ItemOwnerDto result = itemService.getItemById(1L, 1L);
 
         assertEquals(1L, result.getId());
+        assertNull(result.getLastBooking());
+        assertNull(result.getNextBooking());
+        assertTrue(result.getComments().isEmpty());
     }
 
     @Test
@@ -133,21 +151,21 @@ class ItemServiceTest {
         when(itemRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> itemService.getItemById(99L));
+                () -> itemService.getItemById(1L, 99L));
     }
 
 // ======================== getItemsByOwner ========================
 
     @Test
-    void getItemsByOwner_ShouldReturnList() {
+    void getItemsByOwner_ShouldReturnListOfItemOwnerDto() {
         User owner = makeUser(1L);
         Item item = makeItem(1L, "Дрель", "Описание", true, owner);
-        ItemDto itemDto = makeItemDto(1L, "Дрель", "Описание", true);
 
         when(itemRepository.findAllByOwnerId(1L)).thenReturn(List.of(item));
-        when(itemMapper.mapToItemDto(item)).thenReturn(itemDto);
+        when(bookingRepository.findByItemIdIn(eq(List.of(1L)), any())).thenReturn(List.of());
+        when(commentRepository.findAllByItemIdIn(List.of(1L))).thenReturn(List.of());
 
-        List<ItemDto> result = itemService.getItemsByOwner(1L);
+        List<ItemOwnerDto> result = itemService.getItemsByOwner(1L);
 
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).getId());
@@ -171,12 +189,75 @@ class ItemServiceTest {
 
     @Test
     void search_EmptyText_ShouldReturnEmptyList() {
-        when(itemRepository.search("")).thenReturn(List.of());
+//        when(itemRepository.search("")).thenReturn(List.of());
 
         List<ItemDto> result = itemService.search("");
 
         assertTrue(result.isEmpty());
         verify(itemMapper, never()).mapToItemDto(any());
+    }
+
+    // ======================== addComment ========================
+
+    @Test
+    void addComment_ValidData_ShouldReturnCommentDto() {
+        User author = makeUser(1L);
+        Item item = makeItem(1L, "Дрель", "Описание", true, makeUser(2L));
+        NewCommentRequest request = new NewCommentRequest();
+        request.setText("Отличная дрель!");
+
+        Comment comment = Comment.builder()
+                .id(1L)
+                .text("Отличная дрель!")
+                .item(item)
+                .author(author)
+                .created(LocalDateTime.now())
+                .build();
+
+        CommentDto commentDto = new CommentDto();
+        commentDto.setId(1L);
+        commentDto.setText("Отличная дрель!");
+        commentDto.setAuthorName("User");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(author));
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
+                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(new Booking()));
+        when(commentRepository.save(any(Comment.class))).thenReturn(comment);
+        when(commentMapper.mapToCommentDto(comment)).thenReturn(commentDto);
+
+        CommentDto result = itemService.addComment(1L, 1L, request);
+
+        assertNotNull(result);
+        assertEquals("Отличная дрель!", result.getText());
+        verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    void addComment_NoCompletedBooking_ShouldThrowBadRequestException() {
+        User author = makeUser(1L);
+        Item item = makeItem(1L, "Дрель", "Описание", true, makeUser(2L));
+        NewCommentRequest request = new NewCommentRequest();
+        request.setText("Отличная дрель!");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(author));
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
+                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
+                .thenReturn(Optional.empty());
+
+        assertThrows(BadRequestException.class,
+                () -> itemService.addComment(1L, 1L, request));
+        verify(commentRepository, never()).save(any());
+    }
+
+    @Test
+    void addComment_UserNotFound_ShouldThrowNotFoundException() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class,
+                () -> itemService.addComment(99L, 1L, new NewCommentRequest()));
     }
 
 // ======================== helpers ========================
