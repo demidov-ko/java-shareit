@@ -12,10 +12,10 @@ import ru.practicum.shareit.item.model.Item;
 public interface ItemMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "owner", ignore = true)
-//    @Mapping(target = "request", ignore = true)
+    @Mapping(target = "request", ignore = true)
     Item mapToItem(NewItemRequest request);
 
-    @Mapping(target = "requestId", ignore = true)
+    @Mapping(target = "requestId", source = "request.id")
     @Mapping(target = "comments", ignore = true)
     ItemDto mapToItemDto(Item item);
 

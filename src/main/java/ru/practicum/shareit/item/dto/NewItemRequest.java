@@ -16,4 +16,6 @@ public class NewItemRequest {
 
     @NotNull(message = "Статус доступности обязателен")
     private Boolean available;  //статус о том, доступна или нет вещь для аренды;
+
+    private Long requestId;
 }
