@@ -5,8 +5,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.Status;
+//import ru.practicum.shareit.booking.model.Booking;
+//import ru.practicum.shareit.booking.model.Status;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -221,9 +221,10 @@ class ItemServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
-        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
-                .thenReturn(Optional.of(new Booking()));
+//        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
+//                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
+//                .thenReturn(Optional.of(new Booking()));
+        when(bookingRepository.hasCompletedBooking(1L, 1L)).thenReturn(true);
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
         when(commentMapper.mapToCommentDto(comment)).thenReturn(commentDto);
 
@@ -243,9 +244,10 @@ class ItemServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
-        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
-                .thenReturn(Optional.empty());
+//        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
+//                eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
+//                .thenReturn(Optional.empty());
+        when(bookingRepository.hasCompletedBooking(1L, 1L)).thenReturn(false);
 
         assertThrows(BadRequestException.class,
                 () -> itemService.addComment(1L, 1L, request));

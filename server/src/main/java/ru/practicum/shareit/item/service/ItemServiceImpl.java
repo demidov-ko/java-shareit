@@ -151,10 +151,12 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
-        // проверяем что пользователь брал вещь в аренду и аренда завершена
         boolean hasCompletedBooking = bookingRepository
-                .findByBookerIdAndItemIdAndStatusAndEndBefore(
-                        userId, itemId, Status.APPROVED, LocalDateTime.now()).isPresent();
+                .hasCompletedBooking(userId, itemId);
+
+        boolean hasCompleted = bookingRepository.hasCompletedBooking(userId, itemId);
+        log.info("hasCompletedBooking result: {}, userId={}, itemId={}",
+                hasCompleted, userId, itemId);
 
         if (!hasCompletedBooking) {
             throw new BadRequestException("Оставить отзыв можно только после завершения аренды");

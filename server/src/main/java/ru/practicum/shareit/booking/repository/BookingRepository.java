@@ -2,6 +2,8 @@ package ru.practicum.shareit.booking.repository;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.Status;
 
@@ -28,8 +30,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     //бронирования пользователя по статусу
     List<Booking> findByBookerIdAndStatus(Long bookerId, Status status, Sort sort);
 
-    List<Booking> findByBookerIdAndItemId(Long bookerId, Long itemId);
-
     //----------------------------------------------------------------------------------------
 
     //все бронирования для вещей пользователя
@@ -54,4 +54,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     //проверка, что пользователь брал вещь
     Optional<Booking> findByBookerIdAndItemIdAndStatusAndEndBefore(
             Long bookerId, Long itemId, Status status, LocalDateTime end);
+
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM bookings " +
+            "WHERE booker_id = :bookerId " +
+            "AND item_id = :itemId " +
+            "AND status = 'APPROVED' " +
+            "AND end_date < (NOW() AT TIME ZONE 'Europe/Moscow')",
+            nativeQuery = true)
+    boolean hasCompletedBooking(@Param("bookerId") Long bookerId,
+                                @Param("itemId") Long itemId);
 }
