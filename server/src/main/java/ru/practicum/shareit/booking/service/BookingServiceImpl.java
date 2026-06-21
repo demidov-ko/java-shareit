@@ -37,6 +37,8 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDto createBooking(Long userId, NewBookingRequest request) {
         log.info("Создание бронирования для вещи: id={}", request.getItemId());
+        log.info("SERVER TIME on create: {}", LocalDateTime.now());
+        log.info("Request start: {}, end: {}", request.getStart(), request.getEnd());
 
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
