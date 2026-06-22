@@ -224,7 +224,6 @@ class ItemServiceTest {
         when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
                 eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
                 .thenReturn(Optional.of(new Booking()));
-//        when(bookingRepository.hasCompletedBooking(1L, 1L)).thenReturn(true);
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
         when(commentMapper.mapToCommentDto(comment)).thenReturn(commentDto);
 
@@ -247,7 +246,6 @@ class ItemServiceTest {
         when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
                 eq(1L), eq(1L), eq(Status.APPROVED), any(LocalDateTime.class)))
                 .thenReturn(Optional.empty());
-//        when(bookingRepository.hasCompletedBooking(1L, 1L)).thenReturn(false);
 
         assertThrows(BadRequestException.class,
                 () -> itemService.addComment(1L, 1L, request));

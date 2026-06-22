@@ -156,13 +156,6 @@ public class ItemServiceImpl implements ItemService {
                 .findByBookerIdAndItemIdAndStatusAndEndBefore(
                         userId, itemId, Status.APPROVED, LocalDateTime.now()).isPresent();
 
-//        boolean hasCompletedBooking = bookingRepository
-//                .hasCompletedBooking(userId, itemId);
-//
-//        boolean hasCompleted = bookingRepository.hasCompletedBooking(userId, itemId);
-//        log.info("hasCompletedBooking result: {}, userId={}, itemId={}",
-//                hasCompleted, userId, itemId);
-
         if (!hasCompletedBooking) {
             throw new BadRequestException("Оставить отзыв можно только после завершения аренды");
         }
